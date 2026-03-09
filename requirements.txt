@@ -1,0 +1,8 @@
+hidapi
+keyboard
+soundcard
+numpy
+psutil
+pystray
+Pillow
+pyinstaller

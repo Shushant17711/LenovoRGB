@@ -65,7 +65,7 @@ class LenovoRGBApp:
         self.root.geometry("280x150")
         self.root.resizable(False, False)
         
-        self.modes = ['type', 'audio', 'cpu', 'pomodoro', 'breathing', 'matrix', 'rainbow', 'off']
+        self.modes = ['type', 'audio', 'cpu', 'screen', 'breathing', 'meteor', 'aurora', 'fire', 'glitch', 'rainbow', 'plasma', 'heartbeat', 'matrix', 'disco', 'storm', 'dna', 'off']
         self.mode_var = tk.StringVar(value='type')
         
         # Style
@@ -105,7 +105,7 @@ class LenovoRGBApp:
         # Register the global shortcut to cycle modes
         self.bind_shortcut()
 
-        if self.config.get("startup_minimized", False):
+        if self.config.get("startup_minimized", True):
             self.root.withdraw()
             self.root.after(100, self.show_tray_icon)
 
@@ -115,7 +115,7 @@ class LenovoRGBApp:
                 return json.load(f)
         except Exception:
             return {
-                "startup_minimized": False,
+                "startup_minimized": True,
                 "default_mode": "type",
                 "shortcut": "ctrl+shift+m"
             }
@@ -128,16 +128,54 @@ class LenovoRGBApp:
             print(f"Error saving config: {e}")
 
     def bind_shortcut(self):
+        # Remove previous hook if any
+        if hasattr(self, '_shortcut_hook') and self._shortcut_hook is not None:
+            try:
+                keyboard.unhook(self._shortcut_hook)
+            except:
+                pass
+            self._shortcut_hook = None
         try:
             keyboard.unhook_all_hotkeys()
         except:
             pass
+
         shortcut = self.config.get("shortcut", "ctrl+shift+m")
-        if shortcut:
+        if not shortcut:
+            return
+
+        # Parse shortcut into modifier keys and the trigger key
+        parts = [p.strip().lower() for p in shortcut.split('+')]
+        modifier_names = {'ctrl', 'shift', 'alt', 'left ctrl', 'right ctrl',
+                          'left shift', 'right shift', 'left alt', 'right alt',
+                          'left windows', 'right windows', 'windows'}
+        modifiers = [p for p in parts if p in modifier_names]
+        trigger_keys = [p for p in parts if p not in modifier_names]
+
+        if not trigger_keys:
+            # All parts are modifiers, fall back to original method
             try:
                 keyboard.add_hotkey(shortcut, self.cycle_mode, suppress=False)
             except Exception as e:
                 print(f"Warning: Failed to bind hotkey '{shortcut}': {e}")
+            return
+
+        trigger_key = trigger_keys[-1]  # Use the last non-modifier as trigger
+
+        def on_trigger(event):
+            if event.event_type != 'down':
+                return
+            # Check that ALL required modifiers are currently held
+            for mod in modifiers:
+                if not keyboard.is_pressed(mod):
+                    return
+            # Check no extra modifiers are pressed (to avoid triggering on superset combos)
+            self.cycle_mode()
+
+        try:
+            self._shortcut_hook = keyboard.on_press_key(trigger_key, on_trigger, suppress=False)
+        except Exception as e:
+            print(f"Warning: Failed to bind hotkey '{shortcut}': {e}")
 
     def open_settings(self):
         settings_win = tk.Toplevel(self.root)
@@ -150,7 +188,7 @@ class LenovoRGBApp:
         main_frame = ttk.Frame(settings_win, padding="20")
         main_frame.pack(fill=tk.BOTH, expand=True)
 
-        min_var = tk.BooleanVar(value=self.config.get("startup_minimized", False))
+        min_var = tk.BooleanVar(value=self.config.get("startup_minimized", True))
         ttk.Checkbutton(main_frame, text="Start Minimized in Tray", variable=min_var).pack(pady=5, anchor=tk.W)
 
         ttk.Label(main_frame, text="Default Mode:").pack(pady=(10, 2), anchor=tk.W)

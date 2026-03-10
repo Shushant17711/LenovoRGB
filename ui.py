@@ -144,36 +144,29 @@ class LenovoRGBApp:
         if not shortcut:
             return
 
-        # Parse shortcut into modifier keys and the trigger key
-        parts = [p.strip().lower() for p in shortcut.split('+')]
-        modifier_names = {'ctrl', 'shift', 'alt', 'left ctrl', 'right ctrl',
-                          'left shift', 'right shift', 'left alt', 'right alt',
-                          'left windows', 'right windows', 'windows'}
-        modifiers = [p for p in parts if p in modifier_names]
-        trigger_keys = [p for p in parts if p not in modifier_names]
+        # Parse shortcut into required key names (all lowercase)
+        required_keys = set(p.strip().lower() for p in shortcut.split('+'))
 
-        if not trigger_keys:
-            # All parts are modifiers, fall back to original method
-            try:
-                keyboard.add_hotkey(shortcut, self.cycle_mode, suppress=False)
-            except Exception as e:
-                print(f"Warning: Failed to bind hotkey '{shortcut}': {e}")
-            return
+        # Track currently held keys ourselves (keyboard.is_pressed is unreliable inside hooks)
+        pressed_keys = set()
+        fired = [False]  # Use list to allow mutation in closure
 
-        trigger_key = trigger_keys[-1]  # Use the last non-modifier as trigger
-
-        def on_trigger(event):
-            if event.event_type != 'down':
-                return
-            # Check that ALL required modifiers are currently held
-            for mod in modifiers:
-                if not keyboard.is_pressed(mod):
-                    return
-            # Check no extra modifiers are pressed (to avoid triggering on superset combos)
-            self.cycle_mode()
+        def on_key_event(event):
+            name = event.name.lower() if event.name else ''
+            if event.event_type == 'down':
+                pressed_keys.add(name)
+                # Check if all required keys are now held
+                if not fired[0] and required_keys.issubset(pressed_keys):
+                    fired[0] = True
+                    self.cycle_mode()
+            elif event.event_type == 'up':
+                pressed_keys.discard(name)
+                # Reset fired flag when any required key is released
+                if not required_keys.issubset(pressed_keys):
+                    fired[0] = False
 
         try:
-            self._shortcut_hook = keyboard.on_press_key(trigger_key, on_trigger, suppress=False)
+            self._shortcut_hook = keyboard.hook(on_key_event, suppress=False)
         except Exception as e:
             print(f"Warning: Failed to bind hotkey '{shortcut}': {e}")
 

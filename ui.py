@@ -65,7 +65,7 @@ class LenovoRGBApp:
         self.root.geometry("280x150")
         self.root.resizable(False, False)
         
-        self.modes = ['type', 'audio', 'cpu', 'screen', 'breathing', 'meteor', 'aurora', 'fire', 'glitch', 'rainbow', 'plasma', 'heartbeat', 'matrix', 'disco', 'storm', 'dna', 'off']
+        self.modes = ['type', 'audio', 'cpu', 'screen', 'breathing', 'meteor', 'aurora', 'fire', 'glitch', 'rainbow', 'plasma', 'heartbeat', 'matrix', 'disco', 'storm', 'dna', 'ripple', 'off']
         self.mode_var = tk.StringVar(value='type')
         
         # Style
@@ -105,9 +105,68 @@ class LenovoRGBApp:
         # Register the global shortcut to cycle modes
         self.bind_shortcut()
 
+        self.hook_shutdown()
+
         if self.config.get("startup_minimized", True):
             self.root.withdraw()
             self.root.after(100, self.show_tray_icon)
+
+    def hook_shutdown(self):
+        if os.name != 'nt':
+            return
+            
+        import ctypes
+        import platform
+        from ctypes import wintypes
+        
+        try:
+            hwnd = int(self.root.wm_frame(), 16)
+        except Exception:
+            try:
+                hwnd = self.root.winfo_id()
+            except Exception:
+                return
+
+        GWL_WNDPROC = -4
+        WM_QUERYENDSESSION = 0x0011
+        WM_ENDSESSION = 0x0016
+        
+        WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_long, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
+        
+        if platform.architecture()[0] == '64bit':
+            SetWindowLongPtr = ctypes.windll.user32.SetWindowLongPtrW
+            SetWindowLongPtr.argtypes = [wintypes.HWND, ctypes.c_int, WNDPROC]
+            SetWindowLongPtr.restype = ctypes.c_void_p
+            GetWindowLongPtr = ctypes.windll.user32.GetWindowLongPtrW
+            GetWindowLongPtr.argtypes = [wintypes.HWND, ctypes.c_int]
+            GetWindowLongPtr.restype = ctypes.c_void_p
+        else:
+            SetWindowLongPtr = ctypes.windll.user32.SetWindowLongW
+            SetWindowLongPtr.argtypes = [wintypes.HWND, ctypes.c_int, WNDPROC]
+            SetWindowLongPtr.restype = ctypes.c_void_p
+            GetWindowLongPtr = ctypes.windll.user32.GetWindowLongW
+            GetWindowLongPtr.argtypes = [wintypes.HWND, ctypes.c_int]
+            GetWindowLongPtr.restype = ctypes.c_void_p
+            
+        CallWindowProc = ctypes.windll.user32.CallWindowProcW
+        CallWindowProc.argtypes = [ctypes.c_void_p, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM]
+        CallWindowProc.restype = ctypes.c_long
+        
+        old_wndproc = GetWindowLongPtr(hwnd, GWL_WNDPROC)
+        if not old_wndproc:
+            return
+            
+        def custom_wndproc(h, msg, wp, lp):
+            if msg in (WM_QUERYENDSESSION, WM_ENDSESSION):
+                try:
+                    self.exit_app()
+                except Exception:
+                    pass
+                return 1
+            return CallWindowProc(old_wndproc, h, msg, wp, lp)
+            
+        self._wndproc_hook = WNDPROC(custom_wndproc)
+        SetWindowLongPtr(hwnd, GWL_WNDPROC, self._wndproc_hook)
 
     def load_config(self):
         try:
@@ -131,10 +190,11 @@ class LenovoRGBApp:
         # Remove previous hook if any
         if hasattr(self, '_shortcut_hook') and self._shortcut_hook is not None:
             try:
-                keyboard.unhook(self._shortcut_hook)
+                keyboard.remove_hotkey(self._shortcut_hook)
             except:
                 pass
             self._shortcut_hook = None
+            
         try:
             keyboard.unhook_all_hotkeys()
         except:
@@ -144,29 +204,17 @@ class LenovoRGBApp:
         if not shortcut:
             return
 
-        # Parse shortcut into required key names (all lowercase)
-        required_keys = set(p.strip().lower() for p in shortcut.split('+'))
-
-        # Track currently held keys ourselves (keyboard.is_pressed is unreliable inside hooks)
-        pressed_keys = set()
-        fired = [False]  # Use list to allow mutation in closure
-
-        def on_key_event(event):
-            name = event.name.lower() if event.name else ''
-            if event.event_type == 'down':
-                pressed_keys.add(name)
-                # Check if all required keys are now held
-                if not fired[0] and required_keys.issubset(pressed_keys):
-                    fired[0] = True
-                    self.cycle_mode()
-            elif event.event_type == 'up':
-                pressed_keys.discard(name)
-                # Reset fired flag when any required key is released
-                if not required_keys.issubset(pressed_keys):
-                    fired[0] = False
+        # Add a debounce to avoid multiple triggers when held down
+        last_trigger = [0]
+        
+        def hotkey_callback():
+            now = time.time()
+            if now - last_trigger[0] > 0.3:
+                last_trigger[0] = now
+                self.cycle_mode()
 
         try:
-            self._shortcut_hook = keyboard.hook(on_key_event, suppress=False)
+            self._shortcut_hook = keyboard.add_hotkey(shortcut, hotkey_callback, suppress=False)
         except Exception as e:
             print(f"Warning: Failed to bind hotkey '{shortcut}': {e}")
 

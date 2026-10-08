@@ -148,3 +148,7 @@ Each batch file will request administrator privileges automatically.
 - **Audio Visualizer Not Working**: Ensure your audio output isn't exclusive. The script intercepts your default Windows loopback speaker device. Only plays when audio is actively outputted.
 - **Lights stuck on after closing**: This should be fixed — the app now uses `atexit` handlers and Windows Console Ctrl handlers to turn lights off on exit. If lights are still stuck after a crash, just restart the app briefly and close it cleanly.
 - **Missing or Locked Interface**: The script relies on the Lenovo hardware interface `0xff89:0x00cc`. You **must** run the script / `.exe` as Administrator to write direct raw USB HID payloads to your laptop.
+
+## License
+
+MIT. See [LICENSE](LICENSE).

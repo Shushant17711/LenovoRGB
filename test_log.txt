@@ -1,3 +1,0 @@
-Started
-SetConsoleCtrlHandler success: 1
-Received ctrl_type: 2

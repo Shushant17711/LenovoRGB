@@ -14,7 +14,8 @@
 - **Startup Integration**: Effortlessly start the app automatically minimized to the system tray with elevated privileges.
 - **Lightweight Executable**: Compile the Python scripts into a single standalone `.exe` file you can place anywhere.
 - **Graceful Shutdown**: Automatic lights-off cleanup when the app is closed, the terminal is closed, or the system shuts down — no more stuck LEDs.
-- **16 Dynamic Lighting Modes**: From responsive typing gradients to audio visualizers to lightning storms, use your keyboard's LEDs as a canvas.
+- **Sleep Detection**: Lights automatically turn off when your PC goes to sleep and resume when you wake it up.
+- **18 Dynamic Lighting Modes**: From responsive typing gradients to audio visualizers to lightning storms, use your keyboard's LEDs as a canvas.
 
 ---
 
@@ -23,98 +24,86 @@
 ### Reactive & Utility Modes
 
 1. ⌨️ **Type-Lighting (Reactive)**
-   When you press a key, the corresponding keyboard zone instantly bursts with a random vibrant color and swiftly fades back down. Runs at 60fps for snappy, responsive feedback. Repeated key presses always trigger a new color.
+   When you press a key, the corresponding keyboard zone instantly bursts with a random vibrant color and swiftly fades back down. Runs at 60fps for snappy, responsive feedback.
 
 2. 🎵 **Audio Visualizer (Music Rhythm)**
    The lights bounce to the beat of any audio playing on your laptop (Spotify, YouTube, Games).
    - Zone 1 (Left) pulses **RED** to Bass frequencies.
    - Zone 2 (Mid-Left) pulses **GREEN** to Mid frequencies.
    - Zone 3 (Mid-Right) pulses **BLUE** to Treble frequencies.
-   - Zone 4 (Right) pulses **WHITE** to overall volume (RMS).
+   - Zone 4 (Right) pulses **CYAN** to overall volume (RMS).
 
 3. 💾 **CPU Core Monitor**
-   Uses your keyboard as a live dashboard. As your CPU load increases, zones shift from Blue (Idle) → Green (Normal) → Red (Heavy Load). Zones map to your CPU core groups.
+   Uses your keyboard as a live dashboard. As CPU load increases, zones shift from Blue (Idle) → Green (Normal) → Red (Heavy Load).
 
 4. 🖥️ **Screen Ambilight**
-   Matches your keyboard lighting to your screen's colors in real time. The display is split into 4 vertical regions that map to the 4 keyboard zones. Colors are saturation-boosted for vibrant output.
-
-5. 🍅 **Pomodoro Timer**
-   A silent productivity timer. 
-   - **Work (25min)**: The keyboard progressively turns bright green across the 4 zones.
-   - **Break (5min)**: The keyboard flashes and turns solid blue to signify your short break.
+   Matches your keyboard lighting to your screen's colors in real time. The display is split into 4 vertical regions mapping to the 4 keyboard zones.
 
 ### Ambient & Animation Modes
 
-6. 🌬️ **Breathing Color Cycle**
-   A smooth, calming, slow animation that pulses the whole keyboard in Lenovo Blue.
-
-7. 🌈 **Rainbow Wave**
-   A gorgeous, uninterrupted, flowing wave of colors smoothly cycling across all 4 zones.
-
-8. 🌌 **Aurora (Northern Lights)**
-   Overlapping sine waves generate an organic, shimmering green-blue-purple glow that drifts across the keyboard like real northern lights.
-
-9. 🔥 **Fire / Flame**
-   Flickering orange-red fire effect with random intensity fluctuations and occasional bright yellow flare-ups on each zone.
-
-10. 💜 **Plasma Energy**
-    Overlapping multi-frequency sine waves create an organic plasma-like animation with continuously drifting hues across all zones.
-
-11. 💗 **Heartbeat**
-    Realistic cardiac rhythm — a sharp "lub-dub" double pulse followed by rest. The hue gently shifts from blue through purple to red over an 8-second cycle, with a subtle ripple effect across zones.
-
-12. 🧬 **DNA Helix**
-    Two counter-rotating helical waves (Cyan and Magenta) weave across the keyboard. Where the strands cross, they blend into white/lavender with a brightness boost.
+5. 🌬️ **Breathing** — Slow pulse in Lenovo Blue.
+6. 🌈 **Rainbow Wave** — Flowing wave of colors across all zones.
+7. 🌌 **Aurora (Northern Lights)** — Shimmering green-blue-purple glow.
+8. 🔥 **Fire / Flame** — Flickering orange-red fire with random flare-ups.
+9. 💜 **Plasma Energy** — Organic plasma animation with drifting hues.
+10. 💗 **Heartbeat** — Realistic cardiac "lub-dub" pulse with hue shift.
+11. 🧬 **DNA Helix** — Two counter-rotating cyan/magenta helical waves.
 
 ### High-Energy & Effect Modes
 
-13. 💻 **Matrix Digital Rain**
-    Bursts of bright cyber-green flash and decay at random intervals across the zones, resembling the iconic raining code from The Matrix.
-
-14. 🪩 **Disco Strobe**
-    Beat-synced at 128 BPM — each zone snaps to a vivid color every beat, with smooth fading in between. Every 8th beat triggers a synchronized white strobe burst.
-
-15. ⛈️ **Lightning Storm**
-    Dark indigo/purple ambient breathing interrupted by dramatic multi-phase lightning strikes — a bright initial flash, spread to adjacent zones, a brief dark gap, a dimmer blue afterstrike, and a violet afterglow fade.
-
-16. 🤖 **Cyberpunk Glitch**
-    Neon cyan, magenta, hot-pink, and deep-sky-blue palette with random glitch events — sudden blackouts, white flashes, and color scrambles for a futuristic cyberpunk aesthetic.
-
-17. ☄️ **Meteor Bounce**
-    A light "meteor" bounces back and forth across the 4 zones with a trailing glow. Changes color between cyan and magenta depending on direction.
-
-18. 🌑 **Turn Off Lights**
-    Completely shut off your keyboard illumination when needed.
+12. 💻 **Matrix Digital Rain** — Cyber-green flashes resembling the Matrix.
+13. 🪩 **Disco Strobe** — Beat-synced at 130 BPM with white strobe bursts.
+14. ⛈️ **Lightning Storm** — Dramatic lightning strikes with afterglow.
+15. 🤖 **Cyberpunk Glitch** — Neon palette with random glitch blackouts and flashes.
+16. ☄️ **Meteor Bounce** — A meteor bouncing back and forth across zones.
+17. 🌊 **Ripple** — Interactive ripples triggered by keypresses.
+18. 🌑 **Off** — Turn off keyboard lighting completely.
 
 ---
 
-## 🛠️ Setup & Installation
+## 🚀 Quick Start (Recommended)
 
-### Option 1: Running as a Python script
+1. Go to the [Releases](../../releases) page and download the latest `LenovoRGB-windows-x64.zip`
+2. Extract the zip and run `LenovoRGB.exe` **as Administrator**
+3. The app will appear in your system tray — right-click to change modes
 
-1. Open a command prompt in this directory and install the required packages:
-   ```bash
-   pip install -r requirements.txt
-   ```
-2. Double-click `ui.py` or run `python ui.py` from your terminal. 
-   *(Note: The app needs Administrator permissions because it reads global keyboard events for the Type-Lighting mode & Hotkeys!)*
+> **Before running**, open **Lenovo Vantage** and set your RGB profile to **Static** or **Off**. Otherwise the app can't take control of the keyboard.
 
-### Option 2: Build into a Standalone Executable (Recommended)
+---
 
-1. Ensure the requirements are installed (`pip install -r requirements.txt`).
-2. If you don't have `pyinstaller`, install it using `pip install pyinstaller`.
-3. Double-click the **`build_exe.bat`** file.
-4. Wait for the build to finish. Your new standalone executable (`LenovoRGB.exe`) will be generated inside the `dist` folder!
+## 🛠️ Setup from Source
 
-### Option 3: Run Automatically on Startup
+### Prerequisites
 
-1. First, build the executable (Option 2) so that `dist\LenovoRGB.exe` exists.
-2. Right-click **`setup_startup.bat`** and click **"Run as Administrator"**.
-3. It will configure an advanced Windows Scheduled Task so the program runs silently in the background with admin privileges the moment you log in.
+- Python 3.12 (required — pre-built `hidapi` wheels are only available for 3.12)
+- `hidapi.dll` — the native HID library (see below)
 
-### Option 4: Run Individual Modes via Batch Files
+### What is hidapi.dll and why do you need it?
 
-You can run specific modes directly from included `.bat` files without the full GUI:
+`hidapi` is a C library that lets Python communicate directly with USB HID devices (like your keyboard's RGB controller). The Python package is just a wrapper around this native DLL. Without it, the app can't talk to the hardware.
+
+**To get `hidapi.dll`:**
+1. Go to https://github.com/libusb/hidapi/releases/latest
+2. Download `hidapi-win.zip`
+3. Extract it and copy `x64\hidapi.dll` into the project folder (`D:\...\LenovoRGB\`)
+
+> Do not use 32-bit (`x86`) — Python on Windows is 64-bit.
+
+### Option 1: Run as a GUI app
+
+```bash
+# Install dependencies (must be Python 3.12)
+pip install -r requirements.txt
+
+# Run as Administrator
+python ui.py
+```
+
+> The app needs Administrator permissions to write raw USB HID payloads to the keyboard and to hook global keyboard events.
+
+### Option 2: Run a single mode directly (no GUI)
+
+Each mode has its own batch file. Right-click and **Run as administrator**:
 
 | Batch File | Mode |
 |---|---|
@@ -126,28 +115,56 @@ You can run specific modes directly from included `.bat` files without the full 
 | `run_aurora.bat` | Aurora |
 | `run_fire.bat` | Fire |
 | `run_glitch.bat` | Glitch |
+| `run_matrix.bat` | Matrix |
 | `run_meteor.bat` | Meteor |
+| `run_ripple.bat` | Ripple |
 
-Each batch file will request administrator privileges automatically.
+Or run directly from an **Administrator** terminal:
+```bash
+python loq_rgb.py --mode breathing
+python loq_rgb.py --mode audio
+python loq_rgb.py --mode matrix
+# etc.
+```
+
+### Option 3: Build the exe yourself
+
+1. Place `hidapi.dll` (x64) in the project folder
+2. Run:
+   ```
+   .\build_exe.bat
+   ```
+3. The exe will be in the `dist` folder
+
+### Option 4: Run on startup
+
+1. Build the exe first (Option 3)
+2. Right-click `setup_startup.bat` → **Run as administrator**
+3. The app will now launch automatically with admin privileges on every login
 
 ---
 
 ## ⚙️ Configuration
 
-- Right-click the system tray icon and go to **Open UI** → **Settings**.
-- Here you can:
-  - Record a custom **Cycle Mode Shortcut** (e.g., `Ctrl+Shift+M`).
-  - Choose the **Default mode** applied instantly on startup.
-  - Choose to start the app seamlessly **minimized** to the tray.
+Right-click the system tray icon → **Open UI** → **Settings**:
+- Set a custom **cycle mode shortcut** (default: `Ctrl+Shift+M`)
+- Choose the **default mode** on startup
+- Toggle **start minimized** to tray
 
 ---
 
 ## ⚠️ Troubleshooting
 
-- **No lights changing**: Make sure nothing else is controlling the RGB (like Lenovo Vantage/Legion Zone). Open Lenovo Vantage, set your lighting profile to **"Static"** or **Off**, and let the app takeover.
-- **Audio Visualizer Not Working**: Ensure your audio output isn't exclusive. The script intercepts your default Windows loopback speaker device. Only plays when audio is actively outputted.
-- **Lights stuck on after closing**: This should be fixed — the app now uses `atexit` handlers and Windows Console Ctrl handlers to turn lights off on exit. If lights are still stuck after a crash, just restart the app briefly and close it cleanly.
-- **Missing or Locked Interface**: The script relies on the Lenovo hardware interface `0xff89:0x00cc`. You **must** run the script / `.exe` as Administrator to write direct raw USB HID payloads to your laptop.
+| Problem | Fix |
+|---|---|
+| **Lights not changing** | Open Lenovo Vantage and set RGB to **Static** or **Off** |
+| **"Keyboard not found" error** | Make sure you're running as **Administrator** |
+| **`hidapi.dll` not found** | Download `x64\hidapi.dll` from [libusb/hidapi releases](https://github.com/libusb/hidapi/releases/latest) and place it in the project folder |
+| **Audio Visualizer not working** | Make sure audio is actively playing; the app uses Windows loopback |
+| **Lights stuck after crash** | Restart the app and close it cleanly — `atexit` handlers will turn off the lights |
+| **App won't start on Python 3.13+** | Downgrade to Python 3.12 — `hidapi` has no pre-built wheel for newer versions yet |
+
+---
 
 ## License
 

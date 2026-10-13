@@ -1,0 +1,65 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"   # triggers on tags like v1.0.0, v1.2.3
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install hidapi keyboard soundcard numpy psutil pystray Pillow pyinstaller
+
+      - name: Download hidapi.dll
+        run: |
+          $url = "https://github.com/libusb/hidapi/releases/download/hidapi-0.14.0/hidapi-win.zip"
+          Invoke-WebRequest -Uri $url -OutFile hidapi-win.zip
+          Expand-Archive -Path hidapi-win.zip -DestinationPath hidapi-win
+          Copy-Item hidapi-win\x64\hidapi.dll .\hidapi.dll
+        shell: pwsh
+
+      - name: Build executable
+        run: |
+          pyinstaller --noconsole --onefile --hidden-import loq_rgb --add-binary "hidapi.dll;." --name LenovoRGB ui.py
+
+      - name: Create release zip
+        run: |
+          Compress-Archive -Path dist\LenovoRGB.exe -DestinationPath LenovoRGB-windows-x64.zip
+        shell: pwsh
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "LenovoRGB ${{ github.ref_name }}"
+          body: |
+            ## LenovoRGB ${{ github.ref_name }}
+
+            Standalone Windows executable for Lenovo LOQ 4-Zone RGB keyboard control.
+
+            ### Installation
+            1. Download `LenovoRGB-windows-x64.zip`
+            2. Extract and run `LenovoRGB.exe` **as Administrator**
+            3. Set Lenovo Vantage RGB to **Static or Off** before running
+
+            ### Requirements
+            - Lenovo LOQ laptop with 4-zone RGB keyboard
+            - Run as Administrator
+          files: LenovoRGB-windows-x64.zip
+          draft: false
+          prerelease: false

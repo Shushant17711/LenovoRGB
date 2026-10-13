@@ -111,6 +111,27 @@ class LenovoRGBApp:
             self.root.withdraw()
             self.root.after(100, self.show_tray_icon)
 
+    def _on_sleep(self):
+        """System going to sleep — stop mode and turn off lights."""
+        global current_process, stop_event
+        print("System sleeping — turning off RGB.")
+        if stop_event is not None:
+            stop_event.set()
+        if current_process and current_process.is_alive():
+            current_process.join(timeout=2.0)
+            if current_process.is_alive():
+                current_process.terminate()
+                current_process.join()
+        # Turn off lights
+        p = multiprocessing.Process(target=run_mode, args=("off", multiprocessing.Event()))
+        p.start()
+        p.join(timeout=3.0)
+
+    def _on_resume(self):
+        """System resumed — restart the active mode."""
+        print("System resumed — restarting RGB.")
+        self.root.after(1500, lambda: apply_mode(self.mode_var.get()))
+
     def hook_shutdown(self):
         if os.name != 'nt':
             return
@@ -130,6 +151,10 @@ class LenovoRGBApp:
         GWL_WNDPROC = -4
         WM_QUERYENDSESSION = 0x0011
         WM_ENDSESSION = 0x0016
+        WM_POWERBROADCAST = 0x0218
+        PBT_APMSUSPEND = 0x0004      # system going to sleep
+        PBT_APMRESUMEAUTOMATIC = 0x0012  # system resumed
+        PBT_APMRESUMESUSPEND = 0x0007    # user resumed
         
         WNDPROC = ctypes.WINFUNCTYPE(ctypes.c_long, wintypes.HWND, wintypes.UINT, wintypes.WPARAM, wintypes.LPARAM)
         
@@ -162,6 +187,20 @@ class LenovoRGBApp:
                     self.exit_app()
                 except Exception:
                     pass
+                return 1
+            elif msg == WM_POWERBROADCAST:
+                if wp == PBT_APMSUSPEND:
+                    # System going to sleep — stop current mode and turn off lights
+                    try:
+                        self._on_sleep()
+                    except Exception:
+                        pass
+                elif wp in (PBT_APMRESUMEAUTOMATIC, PBT_APMRESUMESUSPEND):
+                    # System resumed — restart the active mode
+                    try:
+                        self._on_resume()
+                    except Exception:
+                        pass
                 return 1
             return CallWindowProc(old_wndproc, h, msg, wp, lp)
             

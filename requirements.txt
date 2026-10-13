@@ -1,3 +1,4 @@
+# NOTE: requires Python 3.12 — hidapi has no pre-built wheel for newer versions
 hidapi
 keyboard
 soundcard

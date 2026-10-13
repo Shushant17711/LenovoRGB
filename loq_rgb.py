@@ -22,6 +22,19 @@ global_kb = None
 _ctrl_handler = None
 EXITING = False
 _CLEANED_UP = False
+SYSTEM_SLEEPING = False  # Set to True on sleep, False on resume
+
+def on_system_sleep():
+    """Called when system is about to sleep — turn off lights."""
+    global SYSTEM_SLEEPING
+    SYSTEM_SLEEPING = True
+    cleanup_lights()
+
+def on_system_resume():
+    """Called when system resumes — lights will restart with next mode cycle."""
+    global SYSTEM_SLEEPING, _CLEANED_UP
+    SYSTEM_SLEEPING = False
+    _CLEANED_UP = False  # Allow lights to be re-applied
 
 def cleanup_lights():
     global global_kb, _CLEANED_UP
@@ -76,6 +89,8 @@ stop_event = None
 
 def is_stopped():
     if globals().get('EXITING', False):
+        return True
+    if globals().get('SYSTEM_SLEEPING', False):
         return True
     if stop_event is not None and stop_event.is_set():
         return True
@@ -212,6 +227,11 @@ class LenovoKeyboard:
             payload[6 + z*3] = int(min(255, max(0, self.colors[z][1])))
             payload[7 + z*3] = int(min(255, max(0, self.colors[z][2])))
 
+        # Skip USB write if nothing changed — prevents firmware blink on repeated identical commands
+        if hasattr(self, '_last_payload') and self._last_payload == payload:
+            return
+        self._last_payload = payload
+
         try:
             with usb_lock:
                 self.device.send_feature_report(payload)
@@ -272,7 +292,10 @@ def mode_type_lighting(kb):
                     zone_brightness[z] = 0.0
                 kb.colors[z] = [int(c * zone_brightness[z]) for c in zone_colors[z]]
             kb.apply_colors()
-            if sleep_interruptible(0.016): # 60 fps
+            # Back off to 10 fps when all zones are dark — dirty-flag handles the no-op
+            # but reducing rate prevents unnecessary CPU and USB traffic when idle
+            all_dark = all(b == 0.0 for b in zone_brightness)
+            if sleep_interruptible(0.1 if all_dark else 0.016):
                 break
     except KeyboardInterrupt:
         print("Exiting...")
@@ -348,14 +371,18 @@ def mode_audio_visualizer(kb):
                     rms_raw = np.sqrt(np.mean(mono**2))
                     if rms_raw < 0.0003:
                         # Silence: fade to black quickly
+                        all_zero = True
                         for z in range(4):
                             for c in range(3):
                                 display_colors[z][c] *= 0.7
                                 if display_colors[z][c] < 1.0:
                                     display_colors[z][c] = 0.0
+                                else:
+                                    all_zero = False
                                 kb.colors[z][c] = int(display_colors[z][c])
                         kb.apply_colors()
-                        if sleep_interruptible(0.02): break
+                        # Once fully black, slow down — dirty-flag skips USB writes anyway
+                        if sleep_interruptible(0.1 if all_zero else 0.02): break
                         continue
                     
                     # Apply window and compute FFT

@@ -1,0 +1,40 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+venv/
+.venv/
+*.egg-info/
+
+# PyInstaller
+build/
+dist/
+*.spec
+
+# Logs
+*.log
+error.log
+test_log.txt
+
+# Temp/scratch files
+test.txt
+ans.md
+
+# DLL (downloaded separately or bundled at build time)
+hidapi.dll
+hidapi-win/
+hidapi-win.zip
+
+# Config (user-specific)
+config.json
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+*.kiro/

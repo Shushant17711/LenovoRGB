@@ -276,6 +276,9 @@ class RGBDevice:
                 errors.append(f"{info.label}: {exc}")
                 self.close()
                 continue
+            # Force the next frame to be written after a reconnect; the probe
+            # above left the keyboard black.
+            self.last_frame = None
             log.info("Connected to %s", info.label)
             return
 

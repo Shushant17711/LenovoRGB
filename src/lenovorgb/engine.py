@@ -23,6 +23,26 @@ STARTING = "starting"
 RUNNING = "running"
 ERROR = "error"
 
+# After this many identical frames a mode is considered idle. Polling slower
+# saves CPU/battery; USB writes are already skipped by RGBDevice.set_colors.
+IDLE_AFTER_FRAMES = 6
+IDLE_INTERVAL_SECONDS = 0.1
+# A wall-clock jump this large means the machine probably resumed from sleep.
+RESUME_GAP_SECONDS = 2.0
+
+
+def _same_frame(first: Sequence[Sequence[float]], second: Sequence[Sequence[float]]) -> bool:
+    return len(first) == len(second) and all(
+        tuple(a) == tuple(b) for a, b in zip(first, second)
+    )
+
+
+def _next_interval(base: float, idle_frames: int) -> float:
+    interval = max(0.004, min(float(base), 0.25))
+    if idle_frames >= IDLE_AFTER_FRAMES:
+        interval = max(interval, IDLE_INTERVAL_SECONDS)
+    return interval
+
 
 class LightingEngine:
     def __init__(
@@ -170,15 +190,30 @@ class LightingEngine:
                 return
             self._set_state(RUNNING, generation)
             last = time.perf_counter()
+            last_wall = time.time()
+            previous: Optional[tuple] = None
+            idle_frames = 0
             while not stop.is_set():
                 now = time.perf_counter()
+                wall = time.time()
+                # perf_counter may stop during suspend; wall time does not.
+                resumed = (wall - last_wall) > RESUME_GAP_SECONDS
+                last_wall = wall
                 dt = now - last
                 last = now
                 frame = mode.step(dt)
                 if frame is not None:
-                    self.device.set_colors(frame)
+                    snapshot = tuple(tuple(color) for color in frame)
+                    if previous is not None and _same_frame(snapshot, previous):
+                        idle_frames += 1
+                    else:
+                        idle_frames = 0
+                    previous = snapshot
+                    # Re-assert the frame after a resume; the keyboard may
+                    # have reset while the machine was asleep.
+                    self.device.set_colors(frame, force=resumed)
                     self._publish(frame)
-                interval = max(0.004, min(float(mode.interval), 0.25))
+                interval = _next_interval(mode.interval, idle_frames)
                 if stop.wait(interval):
                     break
         except DeviceError as exc:

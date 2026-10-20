@@ -109,3 +109,44 @@ def test_select_candidates_handles_zero_usage_backends():
 def test_select_candidates_ignores_unknown_pids():
     entries = [_entry(b"/dev/hidraw9", pid=0xC996)]
     assert select_candidates(entries) == []
+
+
+class _FakeHandle:
+    def __init__(self):
+        self.payloads = []
+
+    def send_feature_report(self, payload):
+        self.payloads.append(bytes(payload))
+        return len(payload)
+
+    def close(self):
+        pass
+
+
+def test_unchanged_frames_do_not_touch_usb():
+    """Regression test for the idle-blinking report (issue #1).
+
+    The keyboard firmware treats every feature report as a new event, so
+    repeating an identical all-black payload made idle LEDs blink faster and
+    faster. set_colors must suppress duplicate payloads unless forced.
+    """
+    device = RGBDevice(dry_run=True)
+    handle = _FakeHandle()
+    device.dry_run = False
+    device._device = handle
+    frame = [(10, 20, 30)] * 4
+
+    device.set_colors(frame)
+    device.set_colors(frame)
+    device.set_colors([(10, 20, 30.4)] * 4)  # rounds to the same bytes
+    assert len(handle.payloads) == 1
+
+    device.set_colors([(11, 20, 30)] * 4)
+    assert len(handle.payloads) == 2
+
+    device.set_colors([(11, 20, 30)] * 4, force=True)
+    assert len(handle.payloads) == 3
+
+    device.set_brightness(50)
+    device.set_colors([(11, 20, 30)] * 4)
+    assert len(handle.payloads) == 4

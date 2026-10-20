@@ -8,8 +8,20 @@ from PyInstaller.utils.hooks import collect_submodules
 
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 
-hiddenimports = []
+binaries = []
 if sys.platform == "win32":
+    # hidapi ships hidapi.dll next to hid.pyd. Copy it explicitly so the
+    # one-file exe does not depend on a DLL being on PATH.
+    try:
+        import glob
+
+        import hid
+
+        hid_dir = os.path.dirname(hid.__file__)
+        binaries += [(path, ".") for path in glob.glob(os.path.join(hid_dir, "*.dll"))]
+    except Exception:
+        pass
+
     hiddenimports += [
         "pynput.keyboard._win32",
         "pynput.mouse._win32",
@@ -45,7 +57,7 @@ datas = [(os.path.join(ROOT, "src", "lenovorgb", "assets"), "lenovorgb/assets")]
 a = Analysis(
     [os.path.join(SPECPATH, "launcher.py")],
     pathex=[os.path.join(ROOT, "src")],
-    binaries=[],
+    binaries=binaries,
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],

@@ -6,7 +6,13 @@ import time
 import pytest
 
 import lenovorgb.engine as engine_module
-from lenovorgb.engine import ERROR, IDLE, RUNNING, LightingEngine
+from lenovorgb.engine import (
+    ERROR,
+    IDLE,
+    RUNNING,
+    LightingEngine,
+    _next_interval,
+)
 from lenovorgb.modes.base import Mode
 
 
@@ -15,6 +21,7 @@ class FakeDevice:
         self.info = None
         self.brightness = 100.0
         self.frames = []
+        self.forces = []
         self.lock = threading.Lock()
 
     def set_brightness(self, percent):
@@ -23,6 +30,7 @@ class FakeDevice:
     def set_colors(self, colors, force=False):
         with self.lock:
             self.frames.append(list(colors))
+            self.forces.append(bool(force))
 
     def close(self):
         pass
@@ -102,3 +110,42 @@ def test_engine_brightness_is_applied(engine):
     assert device.brightness == 50
     assert instance.config.brightness == 50
     assert wait_for(lambda: instance.colors[0][0] <= 128, timeout=2.0)
+
+
+def test_idle_interval_backs_off_without_making_fast_modes_slower():
+    assert _next_interval(0.016, 0) == 0.016
+    assert _next_interval(0.016, 5) == 0.016
+    assert _next_interval(0.016, 6) == 0.1
+    assert _next_interval(0.5, 6) == 0.25
+
+
+def test_engine_forces_one_redraw_after_resume(monkeypatch, engine):
+    instance, device = engine
+    clock = [100.0]
+
+    class FakeTime:
+        @staticmethod
+        def perf_counter():
+            return time.perf_counter()
+
+        @staticmethod
+        def time():
+            return clock[0]
+
+    class Static(Mode):
+        id = "static"
+        name = "Static"
+        description = "constant frame"
+        interval = 0.01
+
+        def step(self, dt):
+            return [(10, 20, 30)] * 4
+
+    monkeypatch.setattr(engine_module, "time", FakeTime)
+    monkeypatch.setattr(engine_module, "get_mode", lambda mode_id: Static)
+    instance.set_mode("static")
+    assert wait_for(lambda: instance.state == RUNNING)
+    assert wait_for(lambda: len(device.forces) >= 2)
+
+    clock[0] += 5.0
+    assert wait_for(lambda: any(device.forces[2:]), timeout=2.0)

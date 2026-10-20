@@ -29,6 +29,9 @@ A ground-up rewrite of the Windows-only script into a cross-platform app.
 
 ### Fixed
 
+- Duplicate HID feature reports are suppressed, so a fully faded/idle keyboard is no longer hammered with identical all-black commands. This fixes the progressive idle blinking reported in #1.
+- Modes back off to 10 fps once their frame has not changed for a few ticks, reducing CPU use in idle reactive/audio modes.
+- The current frame is re-sent once after a suspend/resume, so the keyboard repaints if its firmware reset while asleep.
 - Linux could not identify the RGB interface because the libusb HID backend reports zeroed usage pages; the Linux build now uses `hidraw`.
 - Multiple instances could fight over the LEDs; a cross-platform single-instance lock prevents it.
 - Config writes are atomic and no longer corrupt on a crash.

@@ -15,6 +15,9 @@ log = logging.getLogger("lenovorgb.lock")
 class InstanceLock:
     def __init__(self, path: Optional[Path] = None):
         self.path = Path(path) if path else lock_file()
+        # Keep the holder details out of the locked file itself: Windows can
+        # deny reading a file while another handle has a byte-range lock on it.
+        self.meta_path = self.path.with_name(self.path.name + ".meta")
         self._handle = None
         self.holder_pid: Optional[int] = None
         self.holder_label = ""
@@ -47,26 +50,34 @@ class InstanceLock:
             return False
 
         self._handle = handle
-        try:
-            handle.seek(0)
-            handle.truncate()
-            handle.write(f"{os.getpid()}\t{label}")
-            handle.flush()
-        except OSError:
-            pass
+        self._write_holder(label)
         return True
 
+    def _write_holder(self, label: str) -> None:
+        try:
+            temporary = self.meta_path.with_name(
+                f"{self.meta_path.name}.{os.getpid()}.tmp"
+            )
+            temporary.write_text(f"{os.getpid()}\t{label}", encoding="utf-8")
+            os.replace(temporary, self.meta_path)
+        except OSError as exc:
+            log.debug("Could not write lock metadata %s: %s", self.meta_path, exc)
+
     def _read_holder(self) -> None:
-        try:
-            text = self.path.read_text(encoding="utf-8").strip()
-        except OSError:
+        for candidate in (self.meta_path, self.path):
+            try:
+                text = candidate.read_text(encoding="utf-8").strip()
+            except (OSError, UnicodeError):
+                continue
+            if not text:
+                continue
+            parts = text.split("\t")
+            try:
+                self.holder_pid = int(parts[0]) if parts[0] else None
+            except ValueError:
+                self.holder_pid = None
+            self.holder_label = parts[1] if len(parts) > 1 else ""
             return
-        parts = text.split("\t")
-        try:
-            self.holder_pid = int(parts[0]) if parts and parts[0] else None
-        except ValueError:
-            self.holder_pid = None
-        self.holder_label = parts[1] if len(parts) > 1 else ""
 
     def release(self) -> None:
         if self._handle is None:
@@ -90,6 +101,12 @@ class InstanceLock:
             except OSError:
                 pass
             self._handle = None
+        try:
+            self.meta_path.unlink()
+        except FileNotFoundError:
+            pass
+        except OSError:
+            pass
 
     @property
     def held(self) -> bool:

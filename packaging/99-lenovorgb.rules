@@ -1,0 +1,4 @@
+# Lenovo LOQ / Legion 4-zone RGB keyboard
+# Grants the active desktop user access to the keyboard's raw HID interface.
+# Installed by install.sh; re-plug the keyboard (or reboot) after installing.
+SUBSYSTEM=="hidraw", ATTRS{idVendor}=="048d", TAG+="uaccess", MODE="0660"

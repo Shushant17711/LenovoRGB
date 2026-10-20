@@ -1,8 +1,11 @@
-hidapi
-keyboard
-soundcard
-numpy
-psutil
-pystray
-Pillow
-pyinstaller
+# Runtime dependencies for a full install.
+# `pip install -e ".[all]"` is the recommended route (this file mirrors it).
+hidapi>=0.15.0
+numpy>=1.24
+psutil>=5.9
+pynput>=1.7.6
+evdev>=1.6; sys_platform == "linux"
+soundcard>=0.4.3
+mss>=9.0
+Pillow>=10.0
+pystray>=0.19.4

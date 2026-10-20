@@ -9,6 +9,7 @@ from PyInstaller.utils.hooks import collect_submodules
 ROOT = os.path.abspath(os.path.join(SPECPATH, ".."))
 
 binaries = []
+hiddenimports = []
 if sys.platform == "win32":
     # hidapi ships hidapi.dll next to hid.pyd. Copy it explicitly so the
     # one-file exe does not depend on a DLL being on PATH.

@@ -155,7 +155,7 @@ say "Installing Python packages (this can take a minute) ..."
 EXTRAS="all"
 if [ "$DEV" -eq 1 ]; then EXTRAS="all,dev"; fi
 if ! "$VENV_PY" -m pip install -e ".[${EXTRAS}]"; then
-  die "pip install failed. On Debian/Ubuntu install build tools with: sudo apt install build-essential python3-dev"
+  die "pip install failed. Install build tools first: Arch: sudo pacman -S --needed base-devel; Debian/Ubuntu: sudo apt install build-essential python3-dev"
 fi
 ok "Python packages installed."
 
